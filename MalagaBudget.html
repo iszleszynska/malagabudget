@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#087f79">
+<title>MalagaBudget</title>
+<style>
+:root{--teal:#087f79;--dark:#104d50;--cream:#f5f3ea;--muted:#6e817b;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--dark);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:560px;margin:auto;padding:20px 16px calc(32px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;gap:12px;margin:4px 0 18px}.logo{height:52px;width:52px;border-radius:17px;background:var(--teal);display:grid;place-items:center;font-size:27px;color:white}
+h1{font-size:23px;margin:0}header p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.summary{background:#dceee6;border-radius:22px;padding:20px;margin-bottom:16px}.summary small{color:#416b65}.total{font-size:34px;font-weight:750;margin:6px 0}.count{font-size:13px;color:#416b65}
+nav{display:flex;gap:6px;margin-bottom:14px}nav button{flex:1;background:#e9e8df;color:#47615d;padding:12px 5px;font-size:13px}nav button.active{background:var(--teal);color:#fff}
+.card{background:white;border-radius:20px;padding:18px;margin-bottom:12px;box-shadow:0 2px 12px #183f4010}h2{font-size:18px;margin:0 0 15px}
+label{display:block;font-size:13px;color:#526a67;margin:12px 0 6px}input,select{width:100%;border:1px solid #dce3dc;background:white;border-radius:12px;padding:14px;font-size:16px;color:#173f40;outline-color:var(--teal)}
+button{border:0;border-radius:13px;padding:14px;font-size:15px;font-weight:650;cursor:pointer} .save{width:100%;background:var(--teal);color:white;margin-top:16px}
+.item{display:flex;align-items:center;gap:11px;padding:13px 0;border-bottom:1px solid #edf0e9}.item:last-child{border-bottom:0}.emoji{width:42px;height:42px;display:grid;place-items:center;background:#e5f1eb;border-radius:14px;font-size:21px;flex-shrink:0}.desc{flex:1;min-width:0}.desc strong{display:block;font-size:14px;overflow-wrap:anywhere}.desc small{display:block;color:var(--muted);font-size:11px;margin-top:4px}.price{text-align:right;font-weight:700;white-space:nowrap;font-size:14px}.delete{display:block;background:none;color:#b34e45;padding:5px 0 0;margin-left:auto;font-size:11px}
+.bar{height:7px;border-radius:99px;background:#e8eae2;overflow:hidden;margin:9px 0 6px}.fill{height:100%;background:#15968b;border-radius:99px}.muted{color:var(--muted);font-size:13px}.empty{text-align:center;padding:24px 8px;color:var(--muted);font-size:14px}
+footer{text-align:center;color:#7a8b85;font-size:12px;padding:12px}
+</style>
+</head>
+<body><main>
+<header><div class="logo">🌴</div><div><h1>MalagaBudget 🇪🇸</h1><p>Twoje wydatki w Maladze</p></div></header>
+<section class="summary"><small>Wydano łącznie</small><div class="total" id="total">0,00 €</div><div class="count" id="count">0 wydatków zapisanych</div></section>
+<nav><button class="active" data-view="add">＋ Dodaj</button><button data-view="list">Lista</button><button data-view="stats">Statystyki</button></nav>
+<section id="add" class="card"><h2>Dodaj wydatek</h2>
+<form id="expenseForm"><label for="amount">Kwota (€)</label><input id="amount" inputmode="decimal" placeholder="np. 12,50" required>
+<label for="category">Kategoria</label><select id="category"><option>Jedzenie i napoje</option><option>Transport</option><option>Nocleg</option><option>Zakupy</option><option>Atrakcje</option><option>Kawa i przekąski</option><option>Inne</option></select>
+<label for="description">Na co wydałaś? (opcjonalnie)</label><input id="description" placeholder="np. tapas, kawa, bilet">
+<button class="save" type="submit">Zapisz wydatek</button></form></section>
+<section id="list" class="card" hidden><h2>Twoje wydatki</h2><div id="expenses"></div></section>
+<section id="stats" class="card" hidden><h2>Podsumowanie kategorii</h2><div id="categories"></div></section>
+<footer>Twoje wpisy są zapisywane lokalnie w tej przeglądarce na tym urządzeniu.</footer>
+</main>
+<script>
+const icons={"Jedzenie i napoje":"🍽️","Transport":"🚌","Nocleg":"🛏️","Zakupy":"🛍️","Atrakcje":"🎟️","Kawa i przekąski":"☕","Inne":"✨"};
+const key="malagabudget_expenses_v1";let expenses=[];try{expenses=JSON.parse(localStorage.getItem(key)||"[]");if(!Array.isArray(expenses))expenses=[]}catch(e){expenses=[]}
+const money=n=>n.toLocaleString("pl-PL",{minimumFractionDigits:2,maximumFractionDigits:2})+" €";
+const total=()=>expenses.reduce((s,e)=>s+e.amount,0);
+function persist(){try{localStorage.setItem(key,JSON.stringify(expenses))}catch(e){alert("Nie udało się zapisać danych w tej przeglądarce.")}render()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function render(){document.getElementById("total").textContent=money(total());document.getElementById("count").textContent=expenses.length+" "+(expenses.length===1?"wydatek":expenses.length%10>=2&&expenses.length%10<=4&&!(expenses.length%100>=12&&expenses.length%100<=14)?"wydatki":"wydatków");
+const list=document.getElementById("expenses");list.innerHTML=expenses.length?expenses.slice().reverse().map(e=>`<div class="item"><div class="emoji">${icons[e.category]||"✨"}</div><div class="desc"><strong>${esc(e.description||e.category)}</strong><small>${esc(e.category)} · ${esc(e.date)}</small></div><div><div class="price">${money(e.amount)}</div><button class="delete" data-delete="${e.id}">Usuń</button></div></div>`).join(""):'<div class="empty">Nie ma jeszcze wydatków.<br>Dodaj pierwszy w zakładce „Dodaj”.</div>';
+const cats=[...new Set(expenses.map(e=>e.category))];document.getElementById("categories").innerHTML=cats.length?cats.map(c=>{let v=expenses.filter(e=>e.category===c).reduce((s,e)=>s+e.amount,0),p=total()?Math.round(v/total()*100):0;return `<div style="margin:14px 0"><div style="display:flex;justify-content:space-between;gap:8px;font-size:14px"><span>${icons[c]||"✨"} ${esc(c)}</span><strong>${money(v)}</strong></div><div class="bar"><div class="fill" style="width:${p}%"></div></div><div class="muted">${p}% wszystkich wydatków</div></div>`}).join(""):'<div class="empty">Statystyki pojawią się po dodaniu wydatków.</div>'}
+document.getElementById("expenseForm").addEventListener("submit",e=>{e.preventDefault();let n=Number(document.getElementById("amount").value.trim().replace(/\s/g,"").replace(",","."));if(!Number.isFinite(n)||n<=0){alert("Wpisz poprawną kwotę większą od zera.");return}expenses.push({id:Date.now(),amount:Math.round(n*100)/100,category:document.getElementById("category").value,description:document.getElementById("description").value.trim()||document.getElementById("category").value,date:new Date().toLocaleDateString("pl-PL")});persist();e.target.reset();document.getElementById("amount").focus()});
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("active",x===b));["add","list","stats"].forEach(id=>document.getElementById(id).hidden=id!==b.dataset.view)}));
+document.getElementById("expenses").addEventListener("click",e=>{const b=e.target.closest("[data-delete]");if(b&&confirm("Usunąć ten wydatek?")){expenses=expenses.filter(x=>String(x.id)!==b.dataset.delete);persist()}});
+render();
+</script></body></html>
